@@ -1,0 +1,39 @@
+# Test configuration for C implementation
+# Used by scripts/test-all.sh and CI pipeline
+#
+# To implement the C version:
+# 1. Create a Makefile with 'test' and 'test-vectors' targets
+# 2. The 'test' target should run your unit tests
+# 3. The 'test-vectors' target should:
+#    - Read ../spec/test-vectors.json
+#    - Run your implementation against each test case
+#    - Exit with code 0 on success, non-zero on failure
+# 4. Uncomment the sections below
+
+# [build]
+# # Command to compile the C code
+# command = "make"
+
+# [test]
+# # Command to run all C tests
+# command = "make test"
+# working_dir = "."
+
+# [compliance]
+# # Command to run compliance tests against spec/test-vectors.json
+# command = "make test-vectors"
+# expected_exit = 0
+
+# Example Makefile targets you'll need:
+#
+# test:
+#     ./run_tests
+#
+# test-vectors:
+#     ./test_compliance ../spec/test-vectors.json
+#
+# Where test_compliance is a program that:
+# - Parses the JSON test vectors
+# - Runs your implementation with each test case
+# - Validates the output matches expected results
+# - Returns exit code 0 if all pass, 1 if any fail

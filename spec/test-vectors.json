@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "test_cases": [
+    {
+      "name": "example_test",
+      "description": "Example test case",
+      "input": {},
+      "expected_output": {},
+      "should_error": false
+    }
+  ]
+}

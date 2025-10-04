@@ -1,0 +1,183 @@
+name: Test All Implementations
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Discover which implementations exist and need testing
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      implementations: ${{ steps.find-impls.outputs.implementations }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Find implementations
+        id: find-impls
+        run: |
+          # Find all directories with test-config.toml
+          impls=$(find . -maxdepth 2 -name "test-config.toml" -type f | \
+                  sed 's|./||' | sed 's|/test-config.toml||' | \
+                  jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "implementations=$impls" >> $GITHUB_OUTPUT
+          echo "Found implementations: $impls"
+
+  # Test Python implementation
+  test-python:
+    needs: discover
+    if: contains(needs.discover.outputs.implementations, 'python')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      
+      - name: Set up Python
+        run: uv python install 3.11
+      
+      - name: Install dependencies
+        working-directory: ./python
+        run: uv sync
+      
+      - name: Run Python tests
+        working-directory: ./python
+        run: |
+          # Read test command from test-config.toml
+          TEST_CMD=$(grep -A1 '^\[test\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+          echo "Running: $TEST_CMD"
+          eval $TEST_CMD
+      
+      - name: Run Python compliance tests
+        working-directory: ./python
+        run: |
+          # Read compliance command from test-config.toml
+          COMPLIANCE_CMD=$(grep -A2 '^\[compliance\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+          echo "Running: $COMPLIANCE_CMD"
+          eval $COMPLIANCE_CMD
+
+  # Test C implementation (template for when C is implemented)
+  test-c:
+    needs: discover
+    if: contains(needs.discover.outputs.implementations, 'c')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Install C build tools (gcc, make are usually pre-installed on ubuntu-latest)
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+      
+      - name: Run C build
+        working-directory: ./c
+        run: |
+          # Read build command from test-config.toml if present
+          if grep -q '^\[build\]' test-config.toml; then
+            BUILD_CMD=$(grep -A1 '^\[build\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+            echo "Running: $BUILD_CMD"
+            eval $BUILD_CMD
+          fi
+      
+      - name: Run C tests
+        working-directory: ./c
+        run: |
+          TEST_CMD=$(grep -A1 '^\[test\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+          echo "Running: $TEST_CMD"
+          eval $TEST_CMD
+      
+      - name: Run C compliance tests
+        working-directory: ./c
+        run: |
+          COMPLIANCE_CMD=$(grep -A2 '^\[compliance\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+          echo "Running: $COMPLIANCE_CMD"
+          eval $COMPLIANCE_CMD
+
+  # When adding a new language (e.g., Rust):
+  # 1. Copy the test-c job template above
+  # 2. Rename it to test-rust
+  # 3. Update the 'if' condition: if: contains(needs.discover.outputs.implementations, 'rust')
+  # 4. Update working-directory to ./rust
+  # 5. Install language-specific dependencies (e.g., Rust toolchain)
+  # 6. Keep the same pattern of reading commands from test-config.toml
+  #
+  # Example for Rust:
+  #
+  # test-rust:
+  #   needs: discover
+  #   if: contains(needs.discover.outputs.implementations, 'rust')
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     
+  #     - name: Install Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #     
+  #     - name: Run Rust build
+  #       working-directory: ./rust
+  #       run: |
+  #         if grep -q '^\[build\]' test-config.toml; then
+  #           BUILD_CMD=$(grep -A1 '^\[build\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+  #           eval $BUILD_CMD
+  #         fi
+  #     
+  #     - name: Run Rust tests
+  #       working-directory: ./rust
+  #       run: |
+  #         TEST_CMD=$(grep -A1 '^\[test\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+  #         eval $TEST_CMD
+  #     
+  #     - name: Run Rust compliance tests
+  #       working-directory: ./rust
+  #       run: |
+  #         COMPLIANCE_CMD=$(grep -A2 '^\[compliance\]' test-config.toml | grep 'command' | cut -d'"' -f2)
+  #         eval $COMPLIANCE_CMD
+
+  # Unified test using the test-all.sh script
+  # This runs after individual language tests to ensure cross-language validation
+  test-unified:
+    needs: [discover, test-python]  # Add test-c when implemented
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install uv (for Python testing)
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      
+      - name: Set up Python
+        run: uv python install 3.11
+      
+      # Uncomment when C implementation exists:
+      # - name: Install C build tools
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y build-essential
+      
+      - name: Make test script executable
+        run: chmod +x scripts/test-all.sh
+      
+      - name: Run unified test suite
+        run: ./scripts/test-all.sh
+
+  # Summary job - all tests must pass
+  all-tests:
+    needs: [test-python, test-unified]  # Add test-c when implemented
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.test-python.result }}" != "success" ] || \
+             [ "${{ needs.test-unified.result }}" != "success" ]; then
+            echo "Some tests failed"
+            exit 1
+          fi
+          echo "All tests passed!"

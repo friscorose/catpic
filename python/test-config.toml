@@ -1,0 +1,14 @@
+# Test configuration for Python implementation
+# Used by scripts/test-all.sh and CI pipeline
+
+[test]
+# Command to run all tests
+command = "uv run pytest"
+# Working directory relative to this file's location
+working_dir = "."
+
+[compliance]
+# Command to run compliance tests against spec/test-vectors.json
+command = "uv run pytest tests/test_compliance.py -v"
+# Expected exit code for success
+expected_exit = 0
