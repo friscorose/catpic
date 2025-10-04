@@ -41,6 +41,9 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
       
+      - name: Install pytest
+        run: uv pip install pytest
+
       - name: Install dependencies
         working-directory: ./python
         run: uv sync
