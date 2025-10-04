@@ -1,14 +1,4 @@
-    def encode_animation(
-        self, 
-        gif_path: Union[str, Path],
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-        delay: Optional[int] = None
-    ) -> str:
-        """
-        Encode animated GIF to MEOW animation format.
-        
-        Placeholder implementation for# ---
+# ---
 # ## AI Collaboration Context
 # **Project:** catpic - Terminal Image Viewer | **Session:** #1 | **Date:** 2025-01-27 | **Lead:** [Your Name]  
 # **AI Model:** Claude Sonnet 4 | **Objective:** Create comprehensive catpic project structure
