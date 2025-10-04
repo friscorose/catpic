@@ -1,22 +1,117 @@
-[project]
-name = "catpic"
-version = "0.1.0"
-description = "catpic Python implementation"
-requires-python = ">=3.9"
-dependencies = []
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-]
+# ---
+# ## AI Collaboration Context
+# **Project:** catpic - Terminal Image Viewer | **Session:** #1 | **Date:** 2025-01-27 | **Lead:** Frisco Rose
+# **AI Model:** Claude Sonnet 4 | **Objective:** Create comprehensive catpic project structure
+# **Prior Work:** Initial session  
+# **Current Status:** Complete project scaffolding with BASIS system and EnGlyph integration. Renamed to catpic with .meow extension
+# **Files in Scope:** New project - Establish Python code base
+# **Human Contributions:** Requirements analysis, EnGlyph research, BASIS system design, development strategy, UX design (viewer-first approach), naming (catpic/.meow)  
+# **AI Contributions:** Project structure, code generation, documentation, testing framework  
+# **Pending Decisions:** Phase 1 implementation approach, specific BASIS character sets for 2,3 and 2,4
+# ---
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
+[project]
+name = "catpic"
+version = "0.1.0"
+description = "Display images in terminals using mosaic encoding - MEOW (Mosaic Encoding Over Wire)"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+    { name = "Frisco Rose", email = "friscorose@gmail.com" },
+]
+keywords = ["terminal", "image", "ascii", "ansi", "mosaic", "catpic", "meow"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: System :: Shells",
+    "Topic :: Terminals",
+]
+dependencies = [
+    "pillow>=9.0.0",
+    "click>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "types-pillow",
+]
+textual = [
+    "textual>=0.40.0",
+]
+
+[project.scripts]
+catpic = "catpic.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/example/catpic"
+Repository = "https://github.com/example/catpic"
+Issues = "https://github.com/example/catpic/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/catpic"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.mypy]
+python_version = "3.8"
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+strict_equality = true
