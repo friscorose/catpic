@@ -1,4 +1,4 @@
----
+```
 ## AI Collaboration Context
 **Project:** catpic - Terminal Image Viewer | **Session:** #1 | **Date:** 2025-01-27 | **Lead:** [Your Name]  
 **AI Model:** Claude Sonnet 4 | **Objective:** Create comprehensive catpic project structure
@@ -8,7 +8,7 @@
 **Human Contributions:** Requirements analysis, EnGlyph research, BASIS system design, development strategy, UX design (viewer-first approach), naming (catpic/.meow)  
 **AI Contributions:** Project structure, code generation, documentation, testing framework  
 **Pending Decisions:** Phase 1 implementation approach, specific BASIS character sets for 2,3 and 2,4
----
+```
 
 # catpic - Terminal Image Viewer
 
