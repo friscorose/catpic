@@ -124,6 +124,20 @@ class CatpicEncoder:
         
         This is the core algorithm from toglyxels.py:_img4cell2vals4seg()
         
+        Algorithm steps:
+        1. Quantize block to 2 colors using PIL median cut
+        2. Classify each pixel as foreground (1) or background (0)
+        3. Generate bit pattern: sum of 2^i for each foreground pixel (row-major order)
+        4. Separate original pixels into fg/bg sets based on classification
+        5. Compute RGB centroids (averages) for each set
+        
+        Example (BASIS 2,2):
+            Pixels:     Quantized:    Bit Pattern:
+            [R][B]      [1][0]        pattern = 2^0 = 1
+            [B][R]  ->  [0][1]    ->  pattern += 2^3 = 9
+            
+            Result: blocks[9] = "▚" with red fg, blue bg
+        
         Returns:
             (glut_index, fg_rgb, bg_rgb)
         """
@@ -131,18 +145,21 @@ class CatpicEncoder:
         bg_pixels = []
         glut_idx = 0
         
-        # Quantize to 2 colors (foreground/background)
+        # Step 1: Quantize to 2 colors using median cut algorithm
+        # PIL's quantize(colors=2) uses median cut to find two representative
+        # colors that best represent the block's color distribution
         duotone = cell_img.quantize(colors=2)
         
-        # Build bit pattern and separate fg/bg pixels
+        # Step 2 & 3: Build bit pattern and separate fg/bg pixels
+        # Pixel at index i contributes 2^i to pattern if classified as foreground
         for idx, pixel_class in enumerate(list(duotone.getdata())):
             if pixel_class:  # Foreground pixel
                 fg_pixels.append(cell_img.getdata()[idx])
-                glut_idx += 2**idx
+                glut_idx += 2**idx  # Bit pattern generation
             else:  # Background pixel
                 bg_pixels.append(cell_img.getdata()[idx])
         
-        # Compute color centroids
+        # Step 4: Compute color centroids (arithmetic mean of RGB values)
         fg_color = self._compute_centroid(fg_pixels)
         bg_color = self._compute_centroid(bg_pixels)
         
@@ -152,7 +169,20 @@ class CatpicEncoder:
         """
         Compute RGB centroid (average) from list of RGB tuples.
         
+        Centroid = arithmetic mean of all pixel values in the set.
+        This provides the representative color for either foreground
+        or background pixels in a block.
+        
         From toglyxels.py:_colors2rgb4sty()
+        
+        Args:
+            rgb_list: List of (r, g, b) tuples
+        
+        Returns:
+            (r, g, b) tuple with averaged values
+        
+        Example:
+            [(255, 0, 0), (200, 50, 0)] -> (227, 25, 0)
         """
         n = len(rgb_list)
         if n == 0:
