@@ -1,15 +1,3 @@
-# ---
-# ## AI Collaboration Context
-# **Project:** catpic - Terminal Image Viewer | **Session:** #1 | **Date:** 2025-01-27 | **Lead:** [Your Name]  
-# **AI Model:** Claude Sonnet 4 | **Objective:** Create comprehensive catpic project structure
-# **Prior Work:** Initial session  
-# **Current Status:** Complete project scaffolding with BASIS system and EnGlyph integration. Renamed to catpic with .meow extension
-# **Files in Scope:** New project - all files created  
-# **Human Contributions:** Requirements analysis, EnGlyph research, BASIS system design, development strategy, UX design (viewer-first approach), naming (catpic/.meow)  
-# **AI Contributions:** Project structure, code generation, documentation, testing framework  
-# **Pending Decisions:** Phase 1 implementation approach, specific BASIS character sets for 2,3 and 2,4
-# ---
-
 """catpic decoding and display functionality."""
 
 import sys
@@ -135,7 +123,19 @@ class CatpicPlayer:
         loop: bool = True,
         max_loops: Optional[int] = None
     ) -> None:
-        """Play MEOW animation content."""
+        """
+        Play MEOW animation content with reduced flicker.
+        
+        Animation plays at current cursor position instead of clearing screen.
+        Saves cursor position before starting, restores after.
+        
+        Flicker reduction techniques:
+        1. Save/restore cursor position
+        2. Hide cursor during playback
+        3. Use saved position (\x1b[u) to return to start of animation
+        4. Buffer entire frame before outputting
+        5. Single flush per frame
+        """
         try:
             parsed = self.decoder.parse_meow(content)
         except ValueError as e:
@@ -157,15 +157,23 @@ class CatpicPlayer:
         frames = parsed['frames']
         loop_count = 0
         
+        # Save cursor position and hide cursor
+        # \x1b[s = save cursor position
+        # \x1b[?25l = hide cursor
+        print('\x1b[s\x1b[?25l', end='', flush=True)
+        
         try:
             while True:
                 for frame_data in frames:
-                    # Clear screen (move cursor to top-left)
-                    print('\x1b[H\x1b[2J', end='', flush=True)
-                    
-                    # Display frame
+                    # Restore to saved cursor position
+                    # \x1b[u = restore cursor position
+                    # Build entire frame in memory first
+                    frame_lines = []
                     for line in frame_data['lines']:
-                        print(line)
+                        frame_lines.append(line)
+                    
+                    # Output entire frame at once with single flush
+                    print('\x1b[u' + '\n'.join(frame_lines), end='', flush=True)
                     
                     # Wait for next frame
                     time.sleep(delay_seconds)
@@ -178,8 +186,16 @@ class CatpicPlayer:
                     break
                     
         except KeyboardInterrupt:
-            # Restore cursor and clear screen on Ctrl+C
-            print('\x1b[?25h\x1b[H\x1b[2J', end='', flush=True)
+            pass
+        finally:
+            # Restore cursor position, show cursor, add newline to move past animation
+            # \x1b[u = restore cursor position
+            # \x1b[?25h = show cursor
+            print('\x1b[u\x1b[?25h', end='', flush=True)
+            # Move cursor below animation
+            height = parsed.get('height', 0)
+            if height > 0:
+                print('\x1b[{}B'.format(height), flush=True)
     
     def play_file(
         self, 
