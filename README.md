@@ -103,7 +103,7 @@ DATA:
 [ANSI colored Unicode characters]
 ```
 
-See [spec/meow-format.md](spec/meow-format.md) for complete specification.
+See [spec/meow-format.md](spec/meow_format.md) for complete specification.
 
 ## Project Structure
 
