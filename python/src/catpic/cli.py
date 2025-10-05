@@ -35,6 +35,7 @@ def parse_basis(basis_str: str) -> BASIS:
 @click.option("--width", "-w", type=int, help="Display width in characters")
 @click.option("--height", "-h", type=int, help="Display height in characters")
 @click.option("--delay", "-d", type=int, help="Animation delay in ms (for GIFs)")
+@click.option("--show-headers", is_flag=True, help="Show MEOW format headers (debug)")
 @click.version_option(version="0.1.0")
 @click.pass_context
 def main(
@@ -44,6 +45,7 @@ def main(
     width: Optional[int],
     height: Optional[int],
     delay: Optional[int],
+    show_headers: bool,
 ) -> None:
     """
     catpic - Display images directly in terminal.
@@ -72,23 +74,30 @@ def main(
 
         # Check if it's a MEOW file
         if image_file.suffix.lower() == ".meow":
-            display_meow_file(image_file, delay)
+            display_meow_file(image_file, delay, show_headers)
         else:
             # Display standard image format directly in terminal
-            display_image_directly(image_file, basis_enum, width, height, delay)
+            display_image_directly(image_file, basis_enum, width, height, delay, show_headers)
 
 
-def display_meow_file(meow_file: Path, delay: Optional[int]) -> None:
+def display_meow_file(meow_file: Path, delay: Optional[int], show_headers: bool = False) -> None:
     """Display or play a .meow file."""
     try:
         with open(meow_file, "r", encoding="utf-8") as f:
-            first_line = f.readline().strip()
+            content = f.read()
+            
+        if show_headers:
+            # Show raw MEOW content with headers
+            print(content)
+        else:
+            # Parse and display normally
+            first_line = content.split('\n')[0].strip()
             if first_line.startswith("MEOW-ANIM/"):
                 player = CatpicPlayer()
-                player.play_file(meow_file, delay=delay)
+                player.play(content, delay=delay)
             else:
                 decoder = CatpicDecoder()
-                decoder.display_file(meow_file)
+                decoder.display(content)
     except Exception as e:
         click.echo(f"Error reading .meow file: {e}", err=True)
 
@@ -99,6 +108,7 @@ def display_image_directly(
     width: Optional[int],
     height: Optional[int],
     delay: Optional[int],
+    show_headers: bool = False,
 ) -> None:
     """Display any standard image format directly in terminal."""
     try:
@@ -114,15 +124,27 @@ def display_image_directly(
         encoder = CatpicEncoder(basis=basis)
 
         if is_animated:
-            # Generate MEOW animation content and play directly
+            # Generate MEOW animation content
             meow_content = encoder.encode_animation(image_file, width, height, delay)
-            player = CatpicPlayer()
-            player.play(meow_content, delay=delay)
+            
+            if show_headers:
+                # Show raw MEOW with headers
+                print(meow_content)
+            else:
+                # Play animation
+                player = CatpicPlayer()
+                player.play(meow_content, delay=delay)
         else:
-            # Generate MEOW content and display directly
+            # Generate MEOW content
             meow_content = encoder.encode_image(image_file, width, height)
-            decoder = CatpicDecoder()
-            decoder.display(meow_content)
+            
+            if show_headers:
+                # Show raw MEOW with headers
+                print(meow_content)
+            else:
+                # Display image
+                decoder = CatpicDecoder()
+                decoder.display(meow_content)
 
     except Exception as e:
         click.echo(f"Error displaying image: {e}", err=True)
