@@ -31,11 +31,12 @@ def parse_basis(basis_str: str) -> BASIS:
 @click.argument(
     "image_file", type=click.Path(exists=True, path_type=Path), required=False
 )
-@click.option("--basis", "-b", default="2,2", help="BASIS level (1,2 | 2,2 | 2,3 | 2,4)")
+@click.option("--basis", "-b", default=None, help="BASIS level (1,2 | 2,2 | 2,3 | 2,4). Defaults to CATPIC_BASIS env var or 2,2")
 @click.option("--width", "-w", type=int, help="Display width in characters")
 @click.option("--height", "-h", type=int, help="Display height in characters")
 @click.option("--delay", "-d", type=int, help="Animation delay in ms (for GIFs)")
 @click.option("--show-headers", is_flag=True, help="Show MEOW format headers (debug)")
+@click.option("--force", "-f", is_flag=True, help="Force full-size animation (disable auto-truncation)")
 @click.version_option(version="0.1.0")
 @click.pass_context
 def main(
@@ -46,6 +47,7 @@ def main(
     height: Optional[int],
     delay: Optional[int],
     show_headers: bool,
+    force: bool,
 ) -> None:
     """
     catpic - Display images directly in terminal.
@@ -66,21 +68,26 @@ def main(
 
     # If file provided without subcommand, display directly
     if ctx.invoked_subcommand is None and image_file is not None:
-        try:
-            basis_enum = parse_basis(basis)
-        except click.BadParameter as e:
-            click.echo(f"Error: {e}", err=True)
-            ctx.exit(1)
+        # Use env var if basis not explicitly provided
+        if basis is None:
+            from .core import get_default_basis
+            basis_enum = get_default_basis()
+        else:
+            try:
+                basis_enum = parse_basis(basis)
+            except click.BadParameter as e:
+                click.echo(f"Error: {e}", err=True)
+                ctx.exit(1)
 
         # Check if it's a MEOW file
         if image_file.suffix.lower() == ".meow":
-            display_meow_file(image_file, delay, show_headers)
+            display_meow_file(image_file, delay, show_headers, force)
         else:
             # Display standard image format directly in terminal
-            display_image_directly(image_file, basis_enum, width, height, delay, show_headers)
+            display_image_directly(image_file, basis_enum, width, height, delay, show_headers, force)
 
 
-def display_meow_file(meow_file: Path, delay: Optional[int], show_headers: bool = False) -> None:
+def display_meow_file(meow_file: Path, delay: Optional[int], show_headers: bool = False, force: bool = False) -> None:
     """Display or play a .meow file."""
     try:
         with open(meow_file, "r", encoding="utf-8") as f:
@@ -94,7 +101,7 @@ def display_meow_file(meow_file: Path, delay: Optional[int], show_headers: bool 
             first_line = content.split('\n')[0].strip()
             if first_line.startswith("MEOW-ANIM/"):
                 player = CatpicPlayer()
-                player.play(content, delay=delay)
+                player.play(content, delay=delay, force=force)
             else:
                 decoder = CatpicDecoder()
                 decoder.display(content)
@@ -109,6 +116,7 @@ def display_image_directly(
     height: Optional[int],
     delay: Optional[int],
     show_headers: bool = False,
+    force: bool = False,
 ) -> None:
     """Display any standard image format directly in terminal."""
     try:
@@ -133,7 +141,7 @@ def display_image_directly(
             else:
                 # Play animation
                 player = CatpicPlayer()
-                player.play(meow_content, delay=delay)
+                player.play(meow_content, delay=delay, force=force)
         else:
             # Generate MEOW content
             meow_content = encoder.encode_image(image_file, width, height)
@@ -152,23 +160,28 @@ def display_image_directly(
 
 @main.command()
 @click.argument("input_file", type=click.Path(exists=True, path_type=Path))
-@click.option("--basis", "-b", default="2,2", help="BASIS level (1,2 | 2,2 | 2,3 | 2,4)")
+@click.option("--basis", "-b", default=None, help="BASIS level (1,2 | 2,2 | 2,3 | 2,4). Defaults to CATPIC_BASIS env var or 2,2")
 @click.option("--width", "-w", type=int, help="Output width in characters")
 @click.option("--height", "-h", type=int, help="Output height in characters")
 @click.option("--output", "-o", type=click.Path(path_type=Path), help="Output file path")
 def generate(
     input_file: Path,
-    basis: str,
+    basis: Optional[str],
     width: Optional[int],
     height: Optional[int],
     output: Optional[Path],
 ) -> None:
     """Generate cat-able .meow file from static image."""
-    try:
-        basis_enum = parse_basis(basis)
-    except click.BadParameter as e:
-        click.echo(f"Error: {e}", err=True)
-        return
+    # Use env var if basis not explicitly provided
+    if basis is None:
+        from .core import get_default_basis
+        basis_enum = get_default_basis()
+    else:
+        try:
+            basis_enum = parse_basis(basis)
+        except click.BadParameter as e:
+            click.echo(f"Error: {e}", err=True)
+            return
 
     # Verify it's not animated
     try:
@@ -204,25 +217,30 @@ def generate(
 
 @main.command()
 @click.argument("input_file", type=click.Path(exists=True, path_type=Path))
-@click.option("--basis", "-b", default="2,2", help="BASIS level (1,2 | 2,2 | 2,3 | 2,4)")
+@click.option("--basis", "-b", default=None, help="BASIS level (1,2 | 2,2 | 2,3 | 2,4). Defaults to CATPIC_BASIS env var or 2,2")
 @click.option("--width", "-w", type=int, help="Output width in characters")
 @click.option("--height", "-h", type=int, help="Output height in characters")
 @click.option("--output", "-o", type=click.Path(path_type=Path), help="Output file path")
 @click.option("--delay", "-d", type=int, help="Animation delay in ms")
 def convert(
     input_file: Path,
-    basis: str,
+    basis: Optional[str],
     width: Optional[int],
     height: Optional[int],
     output: Optional[Path],
     delay: Optional[int],
 ) -> None:
     """Convert animated image to cat-able .meow file."""
-    try:
-        basis_enum = parse_basis(basis)
-    except click.BadParameter as e:
-        click.echo(f"Error: {e}", err=True)
-        return
+    # Use env var if basis not explicitly provided
+    if basis is None:
+        from .core import get_default_basis
+        basis_enum = get_default_basis()
+    else:
+        try:
+            basis_enum = parse_basis(basis)
+        except click.BadParameter as e:
+            click.echo(f"Error: {e}", err=True)
+            return
 
     # Verify it's animated
     try:

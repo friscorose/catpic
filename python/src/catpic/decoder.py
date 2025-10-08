@@ -121,13 +121,23 @@ class CatpicPlayer:
         content: str, 
         delay: Optional[int] = None,
         loop: bool = True,
-        max_loops: Optional[int] = None
+        max_loops: Optional[int] = None,
+        force: bool = False
     ) -> None:
         """
         Play MEOW animation content with reduced flicker.
         
         Animation plays at current cursor position instead of clearing screen.
         Saves cursor position before starting, restores after.
+        
+        Auto-truncates animation height to fit terminal unless force=True.
+        
+        Args:
+            content: MEOW-ANIM format string
+            delay: Override frame delay in milliseconds
+            loop: Loop animation indefinitely
+            max_loops: Maximum number of loops
+            force: If True, skip auto-truncation and play full size
         
         Flicker reduction techniques:
         1. Save/restore cursor position
@@ -150,12 +160,39 @@ class CatpicPlayer:
             print("Error: No frames found in animation", file=sys.stderr)
             return
         
+        # Get animation height
+        anim_height = parsed.get('height', 0)
+        
+        # Check terminal height and auto-truncate if needed
+        import os
+        import shutil
+        
+        terminal_size = shutil.get_terminal_size(fallback=(80, 24))
+        terminal_height = terminal_size.lines
+        
+        # Determine display height
+        if force or anim_height <= terminal_height:
+            # Use full height
+            display_height = anim_height
+            truncated = False
+        else:
+            # Auto-truncate to fit terminal
+            # Reserve 3 lines: current line, animation, and one for cursor after
+            display_height = max(1, terminal_height - 3)
+            truncated = True
+            print(f"Note: Animation truncated to {display_height} lines (terminal height: {terminal_height}). Use --force to disable.", file=sys.stderr)
+        
         # Use provided delay or file delay or default
         frame_delay = delay or parsed.get('delay', 100)
         delay_seconds = frame_delay / 1000.0
         
         frames = parsed['frames']
         loop_count = 0
+        
+        # Get expected line width from metadata
+        # Each character position has ANSI codes, so we can't use simple len()
+        # Instead, clear any partial lines by moving to column 0 and clearing to end
+        frame_width = parsed.get('width', 80)
         
         # Save cursor position and hide cursor
         # \x1b[s = save cursor position
@@ -165,15 +202,26 @@ class CatpicPlayer:
         try:
             while True:
                 for frame_data in frames:
-                    # Restore to saved cursor position
-                    # \x1b[u = restore cursor position
-                    # Build entire frame in memory first
-                    frame_lines = []
-                    for line in frame_data['lines']:
-                        frame_lines.append(line)
+                    # Build frame using cursor positioning, no newlines
+                    # \x1b[u = restore to saved position
+                    output_buffer = ['\x1b[u']
                     
-                    # Output entire frame at once with single flush
-                    print('\x1b[u' + '\n'.join(frame_lines), end='', flush=True)
+                    for idx, line in enumerate(frame_data['lines']):
+                        if idx >= display_height:
+                            break
+                        
+                        # Output line content
+                        output_buffer.append(line)
+                        
+                        # Clear to end of line (removes artifacts)
+                        output_buffer.append('\x1b[K')
+                        
+                        # Move to next line (down 1, column 0) - but not after last line
+                        if idx < display_height - 1:
+                            output_buffer.append('\x1b[B\x1b[G')
+                    
+                    # Output entire frame at once
+                    print(''.join(output_buffer), end='', flush=True)
                     
                     # Wait for next frame
                     time.sleep(delay_seconds)
@@ -188,27 +236,28 @@ class CatpicPlayer:
         except KeyboardInterrupt:
             pass
         finally:
-            # Restore cursor position, show cursor, add newline to move past animation
-            # \x1b[u = restore cursor position
-            # \x1b[?25h = show cursor
+            # Restore cursor position, show cursor
             print('\x1b[u\x1b[?25h', end='', flush=True)
             # Move cursor below animation
-            height = parsed.get('height', 0)
-            if height > 0:
-                print('\x1b[{}B'.format(height), flush=True)
+            # Use exact positioning: down display_height lines, then one more for new prompt
+            if display_height > 0:
+                for _ in range(display_height):
+                    print('\x1b[B', end='')
+                print()  # Final newline for prompt
     
     def play_file(
         self, 
         meow_path: Union[str, Path],
         delay: Optional[int] = None,
         loop: bool = True,
-        max_loops: Optional[int] = None
+        max_loops: Optional[int] = None,
+        force: bool = False
     ) -> None:
         """Play MEOW animation file."""
         try:
             with open(meow_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            self.play(content, delay, loop, max_loops)
+            self.play(content, delay, loop, max_loops, force)
         except FileNotFoundError:
             print(f"Error: File '{meow_path}' not found", file=sys.stderr)
         except UnicodeDecodeError:
