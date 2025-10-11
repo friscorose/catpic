@@ -1,10 +1,38 @@
-# catpic - Python Implementation
+# catpic
 
-**Reference implementation** of catpic terminal image viewer.
+Turn images into terminal eye candy using Unicode mosaics and ANSI colors.
 
-**Status**: v0.5.0 - Pre-release, API subject to change
+## What are Glyxels?
+
+**Glyxels** (glyph + pixels) are what happens when you treat each terminal character as a tiny canvas. catpic uses the EnGlyph algorithm to subdivide characters into grids—for example, BASIS 2×4 means each character represents 8 pixels (2 wide, 4 tall).
+
+The magic:
+1. Slice your image into character-sized cells
+2. Find the two most important colors in each cell
+3. Pick the Unicode character that matches the pixel pattern
+4. Paint it with ANSI true-color
+
+Result? A standard 80×24 terminal becomes a 160×96 pixel display. Not bad for text.
+
+## Features
+
+- **Multiple BASIS levels**: Trade speed for quality (1×2 to 2×4)
+- **MEOW format**: Save rendered images for instant replay
+- **Smooth animations**: GIF playback with no flicker
+- **Primitives API**: Build your own TUI graphics with composable functions
+- **Environment aware**: `CATPIC_BASIS` sets your preferred quality
 
 ## Installation
+
+### As a CLI Tool
+
+```bash
+uv tool install catpic
+```
+
+System-wide command, isolated environment. Just works.
+
+### As a Library
 
 ```bash
 pip install catpic
@@ -12,109 +40,154 @@ pip install catpic
 uv add catpic
 ```
 
+Requires Python 3.8+
+
 ## Quick Start
 
 ```bash
-# Display
+# Display an image
 catpic photo.jpg
-catpic animation.gif
 
-# Save
+# Crank up the quality
+export CATPIC_BASIS=2,4
+catpic photo.jpg
+
+# Save for later
 catpic photo.jpg -o photo.meow
+catpic photo.meow  # instant display
 
-# Info
-catpic photo.jpg --info
+# Animate
+catpic animation.gif
 ```
 
-## Python API
+## Python (Reference Implementation)
 
-### High-Level (Simple Use)
-
-```python
-from catpic import CatpicEncoder, CatpicDecoder
-
-encoder = CatpicEncoder(basis=(2, 2))
-meow = encoder.encode_image('photo.jpg', width=80)
-
-decoder = CatpicDecoder()
-decoder.display(meow)
-```
-
-### Low-Level (Advanced TUI Development)
+### High-Level API
 
 ```python
-from catpic.primitives import image_to_cells, get_pips_glut
+from catpic import render_image_ansi, save_meow, load_meow
 from PIL import Image
 
-# Custom rendering
+# Quick render
 img = Image.open('photo.jpg')
-glut = get_pips_glut(2, 4)  # Braille patterns
-cells = image_to_cells(img, 80, 40, glut=glut)
+ansi = render_image_ansi(img, width=60, basis=(2, 4))
+print(ansi)
 
-# Manipulate cells
+# Save as MEOW
+save_meow('output.meow', img, width=60, basis=(2, 4))
+
+# Load and display
+frames, metadata = load_meow('output.meow')
+print(frames[0])
+```
+
+### Primitives API
+
+For when you need fine control:
+
+```python
+from catpic import (
+    Cell, get_full_glut, image_to_cells, 
+    cells_to_ansi_lines
+)
+from catpic import BASIS
+from PIL import Image
+
+# Custom rendering pipeline
+img = Image.open('photo.jpg')
+glut = get_full_glut(BASIS.BASIS_2_4)
+cells = image_to_cells(img, width=80, height=40, glut=glut)
+
+# Now you have a 2D grid of Cell objects
+# Do whatever you want with them
 for row in cells:
     for cell in row:
-        print(cell.to_ansi(), end='')
-    print()
+        # cell.char, cell.fg_rgb, cell.bg_rgb, cell.pattern
+        pass
+
+# Convert to ANSI when ready
+lines = cells_to_ansi_lines(cells)
+print('\n'.join(lines))
 ```
 
-See [../docs/primitives-api.md](../docs/primitives-api.md) for complete primitives reference.
-
-## Development
-
-```bash
-# Setup
-cd python
-uv sync --dev
-
-# Test
-uv run pytest
-uv run pytest tests/test_compliance.py  # Spec compliance
-
-# Format
-uv run black src/ tests/
-uv run ruff check src/ tests/
-
-# Type check
-uv run mypy src/
-```
+See [docs/primitives_api.md](docs/primitives_api.md) for the full primitives reference.
 
 ## Project Structure
 
 ```
-python/
-├── src/catpic/
-│   ├── core.py          # BASIS system, character tables
-│   ├── encoder.py       # Image → MEOW
-│   ├── decoder.py       # MEOW → display
-│   ├── primitives.py    # Low-level API
-│   └── cli.py           # Command-line interface
-├── tests/
-│   ├── test_core.py
-│   └── test_compliance.py
-└── pyproject.toml
+catpic/
+├── python/              # Reference implementation
+│   ├── src/catpic/     # Core library
+│   ├── tests/          # Test suite
+│   └── scripts/        # Utilities
+├── c/                   # C implementation (WIP)
+├── docs/                # Architecture & API docs
+│   ├── primitives_api.md
+│   └── implementations/
+├── spec/                # Format specifications
+│   ├── meow_format.md
+│   ├── api.md
+│   └── compliance.md
+├── scripts/             # Cross-language testing
+└── benchmarks/          # Performance data
 ```
 
-## Reference Implementation
+All implementations share the MEOW format and pass identical compliance tests.
 
-This Python implementation defines canonical behavior for:
-- EnGlyph algorithm (quantization, bit patterns, centroids)
-- MEOW format structure
-- BASIS character mappings
-- API design patterns
+## How BASIS Works
 
-Other language implementations follow this as reference.
+BASIS (x, y) defines the pixel grid per character:
 
-## Contributing
+- **1×2** (4 patterns): Fast, chunky. Good for large images.
+- **2×2** (16 patterns): Balanced. Default for most use cases.
+- **2×3** (64 patterns): Smooth gradients. Sextant blocks.
+- **2×4** (256 patterns): Maximum detail. Braille patterns.
 
-See [../CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+Higher BASIS = better quality, slower rendering. Pick your poison.
 
-Python-specific:
-- Use Black + Ruff for formatting
-- Full type hints required
-- Pytest for tests
-- Follow existing code patterns
+## MEOW Format
+
+**M**osaic **E**ncoding **O**ver **W**ire—a simple text format for terminal graphics:
+
+```
+MEOW/1.0
+WIDTH:80
+HEIGHT:24
+BASIS:2,4
+DATA:
+[ANSI-colored character grid]
+```
+
+Human-readable, easily streamable, version-controlled friendly. It's just fancy text all the way down.
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Code style and testing requirements
+- How to add new BASIS levels
+- Cross-language implementation guidelines
+- Prospective features (Sixel/Kitty graphics, streaming, etc.)
+
+## Testing
+
+```bash
+cd python
+uv sync --all-extras
+uv run pytest -v
+```
+
+All implementations must pass the compliance test suite in `spec/compliance.md`.
 
 ## License
 
-MIT License - see [../LICENSE](../LICENSE)
+MIT—do whatever you want with it.
+
+## See Also
+
+- [EnGlyph](https://github.com/friscorose/textual-EnGlyph) - The Textual widget that inspired this
+- [docs/primitives_api.md](docs/primitives_api.md) - Build your own TUI graphics
+- [spec/meow_format.md](spec/meow_format.md) - Format specification
+
+---
+
+*Built with Claude (Anthropic) exploring terminal graphics techniques that don't suck.*

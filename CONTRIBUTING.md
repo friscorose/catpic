@@ -132,3 +132,116 @@ Open an issue. We'll figure it out together.
 ---
 
 **Keep it simple. Keep it working. Keep it documented.**
+
+---
+
+## Prospective Development
+
+This section outlines ongoing work and aspirational directions for catpic. Contributions in these areas are welcome—please open an issue to discuss your approach before starting major work.
+
+### Current Work in Progress
+
+**Color Fallback Modes**
+- 256-color terminal support (for older terminals)
+- 16-color ANSI fallback
+- Grayscale and monochrome modes
+- Automatic detection and adaptation to terminal capabilities
+
+**Dithering Algorithms**
+- Floyd-Steinberg dithering for smoother gradients
+- Ordered dithering options
+- Configurable dithering strength
+
+**Performance Optimization**
+- Parallel cell processing for large images
+- Chunked rendering for streaming applications
+- Memory-efficient handling of animations
+- Caching strategies for repeated renders
+
+### Aspirational Directions
+
+#### Advanced Terminal Graphics
+
+Detect and utilize modern terminal graphics protocols when available, with glyxel rendering as the universal fallback:
+
+**Sixel Graphics**
+- Native bitmap graphics for terminals with Sixel support
+- Common in xterm, mlterm, and modern terminal emulators
+- Significantly higher resolution and color fidelity
+
+**Kitty Graphics Protocol**
+- High-performance image display with advanced features
+- Supports transparency, cropping, and compositing
+- Growing adoption in modern terminals
+
+**Detection & Fallback Strategy**
+```
+1. Query terminal for Sixel/Kitty support
+2. Use native graphics if available
+3. Fall back to glyxel rendering (BASIS 2,4)
+4. Further fall back to lower BASIS or color modes if needed
+```
+
+This approach ensures catpic works everywhere while providing optimal rendering where possible.
+
+#### Multi-Language Ecosystem
+
+**Rust Implementation**
+- High-performance, memory-safe alternative to Python
+- Zero-cost abstractions for embedded systems
+- Native library for integration with Rust applications
+- Target: API parity with Python reference implementation
+
+**Go Implementation**
+- Excellent concurrency for server applications
+- Simple deployment (single binary)
+- Strong ecosystem for network services
+- Target: Compatible with Python MEOW format and primitives API
+
+**Cross-Language Goals**
+- Maintain API consistency across implementations
+- Shared test vectors ensure behavioral compatibility
+- Language-specific idioms where appropriate
+- Common MEOW format as interchange standard
+
+#### Extended Format Support
+
+**Modern Image Formats**
+- WebP: Efficient compression for web contexts
+- AVIF: Next-generation format with excellent quality/size ratio
+- Animated PNG (APNG): Alternative to GIF with better compression
+
+**Streaming & Real-Time**
+- Video file rendering (frame extraction)
+- Real-time camera/webcam feed display
+- Network stream support (RTSP, HTTP streaming)
+- Performance considerations for real-time rendering
+
+**Advanced Features**
+- Transparency handling with terminal background detection
+- Multi-layer compositing for TUI applications
+- Color space conversion (sRGB, Display P3, etc.)
+
+### Contributing to Prospective Features
+
+If you're interested in working on any of these areas:
+
+1. **Start with an issue**: Describe your approach and get feedback before investing time
+2. **Reference prior art**: Link to relevant specs, implementations, or research
+3. **Ensure cross-platform compatibility**: Test on Linux, macOS, and Windows where applicable
+4. **Add comprehensive tests**: Demonstrate the feature works correctly
+5. **Update documentation**: Include examples and usage patterns
+6. **Consider the primitives API**: Can the feature benefit other TUI frameworks?
+
+### Research Areas
+
+Areas where community input would be valuable:
+
+- **Color quantization algorithms**: Better than median cut for specific use cases?
+- **Perceptual color metrics**: Using CIEDE2000 or similar for better color matching
+- **Terminal capability detection**: Reliable methods across diverse environments
+- **Compression techniques**: MEOW format optimization for storage/transmission
+- **Accessibility**: Ensuring rendered content is accessible to screen readers
+
+Have ideas or expertise in these areas? Open an issue to start a discussion.
+

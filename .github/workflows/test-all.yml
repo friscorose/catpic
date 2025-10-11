@@ -41,12 +41,9 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
       
-      - name: Install pytest
-        run: uv pip install pytest
-
       - name: Install dependencies
         working-directory: ./python
-        run: uv sync
+        run: uv sync --all-extras
       
       - name: Run Python tests
         working-directory: ./python
@@ -54,7 +51,7 @@ jobs:
           # Read test command from test-config.toml
           TEST_CMD=$(grep -A1 '^\[test\]' test-config.toml | grep 'command' | cut -d'"' -f2)
           echo "Running: $TEST_CMD"
-          eval $TEST_CMD
+          uv run $TEST_CMD
       
       - name: Run Python compliance tests
         working-directory: ./python
@@ -62,7 +59,7 @@ jobs:
           # Read compliance command from test-config.toml
           COMPLIANCE_CMD=$(grep -A2 '^\[compliance\]' test-config.toml | grep 'command' | cut -d'"' -f2)
           echo "Running: $COMPLIANCE_CMD"
-          eval $COMPLIANCE_CMD
+          uv run $COMPLIANCE_CMD
 
   # Test C implementation (template for when C is implemented)
   test-c:
