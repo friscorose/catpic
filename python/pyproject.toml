@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "catpic"
-version = "0.1.0"
+version = "0.5.0"
 description = "Display images in terminals using Unicode mosaics and ANSI colors"
 readme = "README.md"
 license = {text = "MIT"}
@@ -12,9 +12,9 @@ requires-python = ">=3.8"
 authors = [
     { name = "Frisco Rose", email = "friscorose@gmail.com" },
 ]
-keywords = ["terminal", "image", "ascii", "ansi", "mosaic", "unicode", "meow"]
+keywords = ["terminal", "image", "ascii", "ansi", "mosaic", "unicode", "meow", "tui"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
@@ -34,6 +34,7 @@ classifiers = [
 dependencies = [
     "pillow>=9.0.0",
     "click>=8.0.0",
+    "pytest>=8.3.5",
 ]
 
 [project.optional-dependencies]

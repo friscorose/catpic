@@ -38,7 +38,7 @@ def parse_basis(basis_str: str) -> BASIS:
 @click.option("--output", "-o", type=click.Path(path_type=Path), help="Save to .meow file instead of displaying")
 @click.option("--force", "-f", is_flag=True, help="Force full-size animation (disable auto-truncation)")
 @click.option("--info", "-i", is_flag=True, help="Show file information instead of displaying")
-@click.version_option(version="0.1.0")
+@click.version_option(version="0.5.0")
 def main(
     image_file: Path,
     basis: Optional[str],

@@ -98,25 +98,25 @@ def get_pips_glut(basis_x: int, basis_y: int) -> List[str]:
         >>> glut[255]  # All bits set
         '⣿'  # Full braille block
     """
-    # Pips GLUTs from EnGlyph
-    pips_tables = {
-        (1, 1): [" ", "◦"],
-        (1, 2): [" ", "᛫", ".", ":"],
-        (2, 2): [" ", "𜰡", "𜰢", "𜰣", "𜰤", "𜰥", "𜰦", "𜰧", "𜰨", "𜰩", "𜰪", "𜰫", "𜰬", "𜰭", "𜰮", "𜰯"],
-        (2, 3): list(" 𜹑𜹒𜹓𜹔𜹕𜹖𜹗𜹘𜹙𜹚�›𜹜𜹝𜹞𜹟𜹠𜹡𜹢𜹣𜹤𜹥𜹦𜹧𜹨𜹩𜹪𜹫𜹬𜹭𜹮𜹯𜹰𜹱𜹲�³𜹴𜹵𜹶𜹷𜹸𜹹𜹺�»𜹼𜹽𜹾𜹿�€𜺁�‚�ƒ�„�…�†�‡�ˆ�‰�Š�‹�Œ���Ž"),
-        (2, 4): list(
-            " ⠁⠈⠉⠂⠃⠊⠋⠐⠑⠘⠙⠒⠓⠚⠛⠄⠅⠌⠍⠆⠇⠎⠏⠔⠕⠜⠝⠖⠗⠞⠟⠠⠡⠨⠩⠢⠣⠪⠫⠰⠱⠸⠹⠲⠳⠺⠻⠤⠥⠬⠭⠦⠧⠮⠯⠴⠵⠼⠽⠶⠷⠾⠿"
-            "⡀⡁⡈⡉⡂⡃⡊⡋⡐⡑⡘⡙⡒⡓⡚⡛⡄⡅⡌⡍⡆⡇⡎⡏⡔⡕⡜⡝⡖⡗⡞⡟⡠⡡⡨⡩⡢⡣⡪⡫⡰⡱⡸⡹⡲⡳⡺⡻⡤⡥⡬⡭⡦⡧⡮⡯⡴⡵⡼⡽⡶⡷⡾⡿"
-            "⢀⢁⢈⢉⢂⢃⢊⢋⢐⢑⢘⢙⢒⢓⢚⢛⢄⢅⢌⢍⢆⢇⢎⢏⢔⢕⢜⢝⢖⢗⢞⢟⢠⢡⢨⢩⢢⢣⢪⢫⢰⢱⢸⢹⢲⢳⢺⢻⢤⢥⢬⢭⢦⢧⢮⢯⢴⢵⢼⢽⢶⢷⢾⢿"
-            "⣀⣁⣈⣉⣂⣃⣊⣋⣐⣑⣘⣙⣒⣓⣚⣛⣄⣅⣌⣍⣆⣇⣎⣏⣔⣕⣜⣝⣖⣗⣞⣟⣠⣡⣨⣩⣢⣣⣪⣫⣰⣱⣸⣹⣲⣳⣺⣻⣤⣥⣬⣭⣦⣧⣮⣯⣴⣵⣼⣽⣶⣷⣾⣿"
-        ),
-    }
+    # Pips GLUTs from EnGlyph - copied directly from toglyxels.py
+    # Structure: pips_glut[x][y] is a string of characters
+    pips_glut = [[], ["", "", ""], ["", "", "", "", ""]]
+    pips_glut[1][1] = " ◦"
+    pips_glut[1][2] = " ᛫.:"
+    pips_glut[2][2] = " 𜰡𜰢𜰣𜰤𜰥𜰦𜰧𜰨𜰩𜰪𜰫𜰬𜰭𜰮𜰯"
+    pips_glut[2][3] = " 𜹑𜹒𜹓𜹔𜹕𜹖𜹗𜹘𜹙𜹚𜹛𜹜𜹝𜹞𜹟𜹠𜹡𜹢𜹣𜹤𜹥𜹦𜹧𜹨𜹩𜹪𜹫𜹬𜹭𜹮𜹯𜹰𜹱𜹲𜹳𜹴𜹵𜹶𜹷𜹸𜹹𜹺𜹻𜹼𜹽𜹾𜹿𜺀𜺁𜺂𜺃𜺄𜺅𜺆𜺇𜺈𜺉𜺊𜺋𜺌𜺍𜺎𜺏"
+    pips_glut[2][4] = (
+        "⠀⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿"
+        "⡀⡁⡂⡃⡄⡅⡆⡇⡈⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒⡓⡔⡕⡖⡗⡘⡙⡚⡛⡜⡝⡞⡟⡠⡡⡢⡣⡤⡥⡦⡧⡨⡩⡪⡫⡬⡭⡮⡯⡰⡱⡲⡳⡴⡵⡶⡷⡸⡹⡺⡻⡼⡽⡾⡿"
+        "⢀⢁⢂⢃⢄⢅⢆⢇⢈⢉⢊⢋⢌⢍⢎⢏⢐⢑⢒⢓⢔⢕⢖⢗⢘⢙⢚⢛⢜⢝⢞⢟⢠⢡⢢⢣⢤⢥⢦⢧⢨⢩⢪⢫⢬⢭⢮⢯⢰⢱⢲⢳⢴⢵⢶⢷⢸⢹⢺⢻⢼⢽⢾⢿"
+        "⣀⣁⣂⣃⣄⣅⣆⣇⣈⣉⣊⣋⣌⣍⣎⣏⣐⣑⣒⣓⣔⣕⣖⣗⣘⣙⣚⣛⣜⣝⣞⣟⣠⣡⣢⣣⣤⣥⣦⣧⣨⣩⣪⣫⣬⣭⣮⣯⣰⣱⣲⣳⣴⣵⣶⣷⣸⣹⣺⣻⣼⣽⣾⣿"
+    )
     
-    key = (basis_x, basis_y)
-    if key not in pips_tables:
+    # Convert string to list of characters
+    if basis_x < len(pips_glut) and basis_y < len(pips_glut[basis_x]):
+        return list(pips_glut[basis_x][basis_y])
+    else:
         raise ValueError(f"No pips GLUT for BASIS ({basis_x}, {basis_y})")
-    
-    return pips_tables[key]
 
 
 def quantize_cell(
@@ -419,53 +419,8 @@ def render_image_ansi(
         glut = get_pips_glut(basis_x, basis_y)
         cells = image_to_cells(image, width, height, glut=glut)
     else:
+        # Fixed: Pass basis as keyword argument
         cells = image_to_cells(image, width, height, basis=basis)
     
-    lines = cells_to_ansi_lines(cells)
-    return '\n'.join(lines)
-=bg_color)
-            
-            segments.append(Segment(cell.char, style))
-        
-        strips.append(Strip(segments))
-    
-    return strips
-
-
-# Convenience function for quick experiments
-def render_image_ansi(
-    image: Image.Image,
-    width: int = 80,
-    height: Optional[int] = None,
-    basis: BASIS = BASIS.BASIS_2_2,
-) -> str:
-    """
-    One-line image to ANSI string conversion.
-    
-    Quick utility for experiments and demos.
-    
-    Args:
-        image: PIL Image
-        width: Terminal width
-        height: Terminal height (auto-calculated if None)
-        basis: BASIS level
-    
-    Returns:
-        Complete ANSI string ready to print
-    
-    Example:
-        >>> from PIL import Image
-        >>> from catpic.primitives import render_image_ansi
-        >>> img = Image.open('photo.jpg')
-        >>> ansi = render_image_ansi(img, width=60)
-        >>> print(ansi)  # Displays image
-    """
-    # Auto-calculate height
-    if height is None:
-        aspect_ratio = image.height / image.width
-        height = int(width * aspect_ratio * 0.5)
-    
-    # Convert to cells and render
-    cells = image_to_cells(image, width, height, basis)
     lines = cells_to_ansi_lines(cells)
     return '\n'.join(lines)
