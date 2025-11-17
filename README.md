@@ -73,7 +73,7 @@ catpic uses a layered architecture for protocol-agnostic rendering:
 This design enables:
 - **Multi-protocol animation** - Same MEOW file works across all terminals
 - **Frame sequencing without native support** - Kitty/Sixel/iTerm2 don't have animation primitives, but catpic provides smooth GIF playback by managing frame sequences with precise timing
-- **External frame sources** - Games, video players, emulators can use catpic for display
+- **External frame sources** - Games, video players, and emulators can use catpic for display
 - **Idempotent conversions** - Glyxel ↔ PNG ↔ Glyxel with no data loss
 - **Future extensions** - New features without breaking MEOW format
 
@@ -137,7 +137,8 @@ Each implementation provides the same core functionality with language-appropria
 
 **Current status:**
 - **Python:** Stable, fully functional (reference implementation)
-- **C, Rust, Go:** Planned (architecture designed for multi-language support)
+- **C** In development 
+- **Rust, Go:** Planned (architecture designed for multi-language support)
 
 ## Graphics Protocols
 
@@ -291,7 +292,7 @@ BASIS (x, y) defines the glyxel grid per character:
 
 **Trade-offs:**
 - **BASIS 1×2**: Perfect color representation (2 colors per cell, no approximation) but chunky appearance
-- **BASIS > 1×2**: Better spatial detail but colors are approximated to fit 2-color constraint per cell
+- **BASIS > 1×2**: Better spatial detail, but colors are approximated to fit the 2-color constraint per cell
 - Higher BASIS = more glyxels per character = better detail, but slower rendering and color approximation
 
 **Color accuracy note:** Each terminal character can only display 2 colors (foreground + background). BASIS 1×2 uses simple half-blocks, so colors map perfectly. Higher BASIS levels subdivide cells into more glyxels, requiring color approximation to find the best 2-color representation for each cell's content.
@@ -352,7 +353,7 @@ MEOW files contain:
 **Sixel shows garbled output:**
 - xterm: Use `xterm -ti vt340` or compile with `--enable-sixel-graphics`
 - Some terminals claim xterm compatibility but lack sixel rendering
-- Sixel detection works but rendering depends on terminal build options
+- Sixel detection works, but rendering depends on terminal build options
 
 **iTerm2 in VSCode doesn't work:**
 - Enable `terminal.integrated.enableImages` setting
@@ -435,7 +436,7 @@ Language-specific APIs will differ to match ecosystem conventions.
 
 **What makes catpic different:**
 - **MEOW format** - Stored, layered, animated terminal graphics that work with `cat`
-- **Universal animation** - GIF playback across ALL protocols (even Kitty/Sixel/iTerm2 which lack native animation)
+- **Universal animation** - GIF playback across ALL protocols (even Kitty/Sixel/iTerm2, which lack native animation)
 - **Multi-protocol** - Automatic fallback across terminal capabilities
 - **Basis-aware rendering** - Quality vs. size tradeoffs with consistent API
 - **Multi-language** - Consistent behavior across Python, C, Rust, Go implementations
@@ -481,7 +482,7 @@ Yes, really. The entire codebase—architecture, implementation, tests, document
 - Terminal testing across platforms (Kitty, xterm, VSCode, tmux)
 
 **The AI contribution:**
-- Complete implementation of all code (encoder, decoder, protocols, geometry)
+- Implementation of the encoder, decoder, protocols, and geometry.
 - Test suite design and implementation (283 tests)
 - Documentation generation (specs, API docs, examples)
 - Bug diagnosis and fixes (sixel rendering, canvas inference, protocol teardown)
